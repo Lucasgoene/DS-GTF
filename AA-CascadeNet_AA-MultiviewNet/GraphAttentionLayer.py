@@ -112,23 +112,22 @@ class GraphAttention(Layer):
         super().__init__(**kwargs)
 
     def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
-        )
+        initializer = initializers.GlorotUniform(seed=0)
+
+        self.kernel_initializer = initializer
+
         self.kernel_regularizer = regularizers.get(
             kwargs.pop("kernel_regularizer", None)
         )
         self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
 
-        self.bias_initializer = initializers.get(
-            kwargs.pop("bias_initializer", "zeros")
-        )
+        self.bias_initializer = initializer
+
         self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
         self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
 
-        self.attn_kernel_initializer = initializers.get(
-            kwargs.pop("attn_kernel_initializer", "glorot_uniform")
-        )
+        self.attn_kernel_initializer = initializer
+        
         self.attn_kernel_regularizer = regularizers.get(
             kwargs.pop("attn_kernel_regularizer", None)
         )
