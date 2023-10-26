@@ -179,11 +179,10 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
     losses_val = []#per epoch
     start_time = time.time()
 
-    model.compile(optimizer = Adam(learning_rate=0.0001), loss="categorical_crossentropy", metrics=["accuracy"])
+    model.compile(optimizer = Adam(learning_rate=0.00001), loss="categorical_crossentropy", metrics=["accuracy"])
     
     experiment_number = eutils.on_train_begin(model_object,model_type,attention,setup)
 
-    
     folder_train = "./preprocessed/train/"
     if not os.path.exists(folder_train):
         os.makedirs(folder_train)
@@ -219,11 +218,6 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
                 X_train = np.load(save_path_X, allow_pickle=True).item()
                 Y_train = np.load(save_path_Y, allow_pickle=True)
 
-                #X_train, Y_train = utils.multi_processing_cascade(subject_files_train,number_files_per_worker,number_workers_training,depth)
-                # save_path_X = os.path.join(folder_train, "X-{}.npy".format(subject))                
-                # save_path_Y = os.path.join(folder_train, "Y-{}.npy".format(subject))
-                # np.save(save_path_X, X_train)
-                # np.save(save_path_Y, Y_train)
             elif model_type == 'Multiview':
                 save_path_X = os.path.join(folder_train, "X-{}.npy".format(subject))                
                 save_path_Y = os.path.join(folder_train, "Y-{}.npy".format(subject))
@@ -242,17 +236,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
 
             print("--Training data loaded [{}]--\t\t".format(subject))
             print("--Loading validation data subject [{}]--".format(subject), end='\r')
-            
-            # train_dataset = None
-            # gc.collect()
-            # with tensorflow.device('CPU'):
-            #     train_dataset = tensorflow.data.Dataset.from_tensor_slices((X_train, Y_train)).batch(batch_size)
-
-            #     X_train = None
-            #     Y_train = None
-            #     gc.collect()
-            #print("\n\nTraining data in dataset", subject)
-            
+                       
             number_workers_validation = 8
             number_files_per_worker = len(subject_files_val)//number_workers_validation
             
@@ -261,10 +245,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
                 save_path_Y = os.path.join(folder_validate, "Y-{}.npy".format(subject))
                 X_validate = np.load(save_path_X, allow_pickle=True).item()
                 Y_validate = np.load(save_path_Y, allow_pickle=True)
-                
-                #X_validate, Y_validate = utils.multi_processing_cascade(subject_files_val,number_files_per_worker,number_workers_validation,depth)
-                # np.save(save_path_X, X_validate)           
-                # np.save(save_path_Y, Y_validate)           
+                      
             elif model_type == 'Multiview':
                 save_path_X = os.path.join(folder_validate, "X-{}.npy".format(subject))
                 save_path_Y = os.path.join(folder_validate, "Y-{}.npy".format(subject))
@@ -278,7 +259,6 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
                 else:
                     X_validate = np.load(save_path_X, allow_pickle=True).item()
                     Y_validate = np.load(save_path_Y, allow_pickle=True)
-                
                     
             timespan = time.time() - start_subject_time
 
@@ -441,7 +421,6 @@ if __name__ == '__main__':
         sys.exit()
 
     gamma_range = np.logspace(-1.0, 1.0, num=5)
+    gamma_range = [1,1,1,1]
     for i in gamma_range:
-        print(i)
-        print(args.epochs)
         train(model_type,args.setup,args.epochs,args.attention,args.depth,args.batchsize, i)
