@@ -270,7 +270,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
                                     verbose = 1, validation_data=(X_validate, Y_validate), 
                                     callbacks=[tensorboard_callback])
             subj_train_timespan = time.time() - start_subject_time
-            eutils.model_checkpoint(experiment_number,model,model_type,epoch+1) # saving model weights after each subject
+            #eutils.model_checkpoint(experiment_number,model,model_type,epoch+1) # saving model weights after each subject
             eutils.model_save(experiment_number,model,model_type,epoch+1)
             print("Model and model's weights saved, Epoch : {}, subject : {}".format(epoch+1,subject) )
             print("Timespan subject training is : {}".format(subj_train_timespan))
