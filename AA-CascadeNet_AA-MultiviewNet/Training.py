@@ -1,4 +1,5 @@
 import os
+import random
 import time
 import gc
 import sys
@@ -125,13 +126,15 @@ train_loss_results = []
 train_accuracy_results = []
 
 
-def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
+def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma, preprocess):
     gpus = tensorflow.config.experimental.list_physical_devices('GPU')
     tensorflow.config.experimental.set_memory_growth(gpus[0], True)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
     np.random.seed(123)
     tensorflow.random.set_seed(1234)
+    os.environ['PYTHONHASHSEED']=str(1234)
+    random.seed(1234)
 
     if setup == 0:#used for quick tests
         subjects = ['105923']
@@ -179,7 +182,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
     losses_val = []#per epoch
     start_time = time.time()
 
-    model.compile(optimizer = Adam(learning_rate=0.00001), loss="categorical_crossentropy", metrics=["accuracy"])
+    model.compile(optimizer = Adam(learning_rate=0.0001), loss="categorical_crossentropy", metrics=["accuracy"])
     
     experiment_number = eutils.on_train_begin(model_object,model_type,attention,setup)
 
@@ -194,11 +197,11 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
         os.makedirs(folder_test)
 
     for epoch in range(num_epochs):
-        print("##[Epoch {}]##".format(epoch+1))
+        print("\n"+ 32*"#"+ "[Epoch {}]".format(epoch+1) + 32*"#" + "\n")
         for subject in subjects:
             start_subject_time = time.time()
-            print("\nTraining on subject", subject)
-            print("--Loading training data subject [{}]--".format(subject), end="\r")
+            print("Training on subject [{}]".format(subject))
+            print(" --Loading training data subject [{}]".format(subject), end="\r")
             
             subject_files_train = []
             for item in utils.train_files_dirs:
@@ -224,7 +227,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
                 X_train = None
                 Y_train = None
 
-                if(not os.path.isfile(save_path_X)):
+                if(not os.path.isfile(save_path_X) or ( preprocess and epoch == 0)):
                     X_train, Y_train = utils.multi_processing_multiviewGAT(subject_files_train,number_files_per_worker,number_workers_training,depth)
                     np.save(save_path_X, X_train)
                     np.save(save_path_Y, Y_train)
@@ -234,8 +237,8 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
 
             X_train,Y_train = utils.reshape_input_dictionary(X_train, Y_train, batch_size, depth)
 
-            print("--Training data loaded [{}]--\t\t".format(subject))
-            print("--Loading validation data subject [{}]--".format(subject), end='\r')
+            print(" --Training data loaded [{}]\t\t".format(subject))
+            print(" --Loading validation data subject [{}]".format(subject), end='\r')
                        
             number_workers_validation = 8
             number_files_per_worker = len(subject_files_val)//number_workers_validation
@@ -252,7 +255,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
                 X_validate = None
                 Y_validate = None
                 
-                if(not os.path.isfile(save_path_X)):
+                if(not os.path.isfile(save_path_X) or ( preprocess and epoch == 0)):
                     X_validate, Y_validate = utils.multi_processing_multiviewGAT(subject_files_val,number_files_per_worker,number_workers_validation,depth)       
                     np.save(save_path_X, X_validate)
                     np.save(save_path_Y, Y_validate)
@@ -264,11 +267,10 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
 
             X_validate, Y_validate = utils.reshape_input_dictionary(X_validate, Y_validate, batch_size,depth)
 
-            print("--Validation data loaded [{}]--\t\t".format(subject))
-            tensorboard_callback = tensorflow.keras.callbacks.TensorBoard(log_dir="./logs")
+            print(" --Validation data loaded [{}]\t\t".format(subject))
             history = model.fit(X_train, Y_train, batch_size = batch_size, epochs = 1, 
                                     verbose = 1, validation_data=(X_validate, Y_validate), 
-                                    callbacks=[tensorboard_callback])
+                                    callbacks=None)
             subj_train_timespan = time.time() - start_subject_time
             #eutils.model_checkpoint(experiment_number,model,model_type,epoch+1) # saving model weights after each subject
             eutils.model_save(experiment_number,model,model_type,epoch+1)
@@ -339,7 +341,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma):
                 elif model_type == 'Multiview':
                     save_path_X = os.path.join(folder_test, "X-{}.npy".format(subject))
                     save_path_Y = os.path.join(folder_test, "Y-{}.npy".format(subject))
-                    if(not os.path.isfile(save_path_X)):
+                    if(not os.path.isfile(save_path_X) or ( preprocess and epoch+1 == 2)):
                         X_test, Y_test = utils.multi_processing_multiviewGAT(subject_files_test,number_files_per_worker,number_workers_testing,depth)
                         np.save(save_path_X, X_test)
                         np.save(save_path_Y, Y_test)
@@ -399,6 +401,8 @@ if __name__ == '__main__':
                         batches, by default 16", default=16)
     parser.add_argument('-g','--gamma',type=float,help="Please choose the gamma value of the\
                         rbf kernel, by default 0.1", default=0.1)
+    parser.add_argument('-p','--preprocess',type=bool,help="Force preprocessing\
+                        , by default false", default=False)
 
     args = parser.parse_args()
 
@@ -420,7 +424,7 @@ if __name__ == '__main__':
         print("Invalid epoch number, exiting ...")
         sys.exit()
 
-    gamma_range = np.logspace(-1.0, 1.0, num=5)
-    gamma_range = [1,1,1,1]
-    for i in gamma_range:
-        train(model_type,args.setup,args.epochs,args.attention,args.depth,args.batchsize, i)
+    # gamma_range = np.logspace(-1.0, 1.0, num=5)
+    # gamma_range = [1,1,1,1]
+    # for i in gamma_range:
+    train(model_type,args.setup,args.epochs,args.attention,args.depth,args.batchsize, args.gamma, args.preprocess)

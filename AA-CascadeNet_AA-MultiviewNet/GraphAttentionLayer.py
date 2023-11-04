@@ -272,6 +272,7 @@ class GraphAttention(Layer):
         batch_outputs = []
         for head in range(self.attn_heads):
             kernel = self.kernels[head]  # W in the paper (1 x F x F')
+
             #kernel = tf.reshape(kernel, [X_dim, kernel.shape[0], kernel.shape[1]])
             attention_kernel = self.attn_kernels[head]  # Attention kernel a in the paper (1 x 2F' x 1)
 
