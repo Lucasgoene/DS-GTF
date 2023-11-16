@@ -112,12 +112,13 @@ def get_multiview_model_global_attention(depth):
     multiview_attention_model = multiview_attention_object.model
     return multiview_attention_model, multiview_attention_object
 
-def get_multiview_model_gat(depth, gamma):
+def get_multiview_model_gat(depth, gamma, gat_heads, encoder_heads):
     multiview_attention_object = MultiviewGAT(window_size,conv1_filters,conv2_filters,conv3_filters,
              conv1_kernel_shape,conv2_kernel_shape,conv3_kernel_shape,
              padding1,padding2,padding3,conv1_activation,conv2_activation,
              conv3_activation,dense_nodes,dense_activation,
-             lstm1_cells,lstm2_cells,dense3_nodes,dense3_activation, depth, gamma)
+             lstm1_cells,lstm2_cells,dense3_nodes,dense3_activation, depth, gamma,
+             gat_heads, encoder_heads)
     multiview_attention_model = multiview_attention_object.model
     return multiview_attention_model, multiview_attention_object
     
@@ -126,7 +127,7 @@ train_loss_results = []
 train_accuracy_results = []
 
 
-def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma, preprocess):
+def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma, preprocess, gat_heads, encoder_heads):
     gpus = tensorflow.config.experimental.list_physical_devices('GPU')
     tensorflow.config.experimental.set_memory_growth(gpus[0], True)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -143,6 +144,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma, preproc
         subjects = ['105923','164636','133019'] #'133019','113922','116726','140117',
         list_subjects_test = ['204521','212318','162935','601127','725751','735148']
     if setup == 2:
+        # subjects = ['185442','191033','191437','192641']
         subjects = ['105923','164636','133019','113922','116726','140117','175237','177746','185442','191033','191437','192641']
         list_subjects_test = ['204521','212318','162935','601127','725751','735148']
         
@@ -162,7 +164,7 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma, preproc
         elif attention == "global":
             model,model_object = get_multiview_model_global_attention(depth)
         elif attention == "gat":
-            model,model_object = get_multiview_model_gat(depth, gamma)
+            model,model_object = get_multiview_model_gat(depth, gamma, gat_heads, encoder_heads)
 
     batch_size = batch_size
 
@@ -426,5 +428,9 @@ if __name__ == '__main__':
 
     # gamma_range = np.logspace(-1.0, 1.0, num=5)
     # gamma_range = [1,1,1,1]
+    gat_range = [4,3,2,1]
+    encoder_range = [1,2,3,4,5,6,7,8,9,10]
     # for i in gamma_range:
-    train(model_type,args.setup,args.epochs,args.attention,args.depth,args.batchsize, args.gamma, args.preprocess)
+    for i in gat_range:
+        for j in encoder_range:
+            train(model_type,args.setup,args.epochs,args.attention,args.depth,args.batchsize, args.gamma, args.preprocess, 3, 8)
