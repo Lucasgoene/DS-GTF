@@ -232,7 +232,6 @@ class MultiviewGAT:
         inputs_lstm = []
         
         outputs_cnn = []
-        # inputs_enc = tf.zeros([None, 0])
         encoder = []
         added = None
 
@@ -246,88 +245,23 @@ class MultiviewGAT:
             flat = Flatten()(gat)
             dense = Dense(self.dense_nodes, activation=self.dense_activation)(flat)
             outputs_cnn.append(dense)
-            # dense = Dense(64, activation=self.dense_activation)(dense)
-            # dense = tf.expand_dims(dense, axis=1)
 
-            # if(i == 0):
-            #     inputs_enc = dense
-            # else:
-            #     inputs_enc = tf.concat([inputs_enc, dense], axis=1)
-                # inputs_enc = tf.squeeze(inputs_enc)
-            # print(inputs_enc.shape)
-
-            # # print(dense.shape)
-            # a = tf.expand_dims(dense, axis=1)
-            # # print(a.shape) 
-            # res = self.encoder_block(a) # B x SEQ_len x Input_len
-            # print(res.shape) 
-            # outputs_cnn.append(gat) # L x B x SEQ_len x Input_len (10x64x16x744)
-
-            # permut = Permute((2,1), input_shape=(self.number_channels,1))(input)
-            # dense2 = Dense(self.dense_nodes, activation=self.dense_activation, input_shape=(1, self.number_channels))(input)
-            # print(dense2.shape)
             encoder.append(input)
             
-        # #LSTM
-        # merge = concatenate(encoder,axis=1)
-        # print(merge.shape)
-        # lstm1 = LSTM(self.lstm1_cells, return_sequences=True)(merge)
-        # print(lstm1.shape)
-
-        # attention_output = self.attention_block(lstm1) 
-        # print(attention_output.shape)
-        # attention_output = tf.expand_dims(attention_output,-1)
-
-        # print(attention_output.shape)
-        # lstm2 = LSTM(self.lstm2_cells, return_sequences=False)(attention_output)
-
-        # print(lstm2.shape)
-        # dense3 = Dense(self.dense3_nodes, activation=self.dense3_activation)(lstm2)
-
-        # second stream
-        merge = concatenate(encoder,axis=-1) #(B, 100, 248)
-        print(merge.shape)
-        # permut = Permute((2,1), input_shape=(100, self.number_channels*self.depth))(merge) #(B, 248, 100)
-        # print(permut.shape)
-        encoder1 = self.encoder_block(merge, self.encoder_heads)  #(B, 100, 248)
+        # Temporal stream
+        merge = concatenate(encoder,axis=-1)
+        encoder1 = self.encoder_block(merge, self.encoder_heads)
         
-        print(encoder1.shape)
-        dense7 = Dense(self.gat_heads, activation=self.dense3_activation)(encoder1) #(B, 744, 100)
-        print(dense7.shape)
+        dense7 = Dense(self.gat_heads, activation=self.dense3_activation)(encoder1) 
         flatten8 = Flatten()(dense7)
-        print(flatten8.shape)
 
-
-
-        # attention_output = self.attention_block(lstm1) 
-        # attention_output = tf.expand_dims(attention_output,-1)
-        
-        # lstm2 = LSTM(self.lstm2_cells, return_sequences=False)(attention_output)
-        
-        # dense3 = Dense(self.dense3_nodes, activation=self.dense3_activation)(lstm2)
-        # output = Dense(4, activation="softmax")(encoder1)
-
-        
+        # Add Spatial stream
         added = Add()([i for i in outputs_cnn])
-        
-        # concat = concatenate(inputs_enc,axis=1)
-        # print(concat.shape)
-        # aa = tf.expand_dims(concat,-1)
-        # print(aa.shape)
-        # final = self.encoder_block(inputs_enc, self.encoder_heads, self.gat_heads)
-        # print(final.shape)
-        # final = tf.squeeze(final, 1)
-        # final = Flatten()(final)
-        # print(concat.shape)
-        # print(final.shape)
-        # print(added.shape) # B x SEQ_len x Input_len (64x16x744)
-        # concat = Flatten()(added)
-        # print(concat.shape) # B x Input_len (64x11904)
 
-        print(added.shape)
+        # Combine streams
         final = concatenate([flatten8,added], axis=-1)
-        # print(final.shape)
+
+        # Generate outputs
         output = Dense(4, activation="softmax")(final)
-        # print(output.shape) 
         model = Model(inputs=inputs_lstm, outputs=output)
         return model
