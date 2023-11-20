@@ -185,7 +185,9 @@ def train(model_type,setup,num_epochs,attention,depth,batch_size, gamma, preproc
     start_time = time.time()
 
     model.compile(optimizer = Adam(learning_rate=0.0001), loss="categorical_crossentropy", metrics=["accuracy"])
-    
+    tensorflow.keras.utils.plot_model(
+        model
+    )
     experiment_number = eutils.on_train_begin(model_object,model_type,attention,setup)
 
     folder_train = "./preprocessed/train/"
@@ -433,4 +435,4 @@ if __name__ == '__main__':
     # for i in gamma_range:
     for i in gat_range:
         for j in encoder_range:
-            train(model_type,args.setup,args.epochs,args.attention,args.depth,args.batchsize, args.gamma, args.preprocess, 3, 8)
+            train(model_type,args.setup,args.epochs,args.attention,args.depth,args.batchsize, args.gamma, args.preprocess, i, j)

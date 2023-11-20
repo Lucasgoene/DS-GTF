@@ -43,13 +43,13 @@ class MultiviewGAT:
         self.conv2_activation = conv2_activation
         self.conv3_activation = conv3_activation
         
-        self.dense_nodes = dense_nodes
+        self.dense_nodes = 248*gat_heads
         self.dense_activation = dense_activation
         
         self.lstm1_cells = lstm1_cells
         self.lstm2_cells = lstm2_cells
         
-        self.dense3_nodes = dense3_nodes
+        self.dense3_nodes = 248*gat_heads
         self.dense3_activation = dense3_activation
         
         self.depth_k = 6
@@ -292,7 +292,7 @@ class MultiviewGAT:
         encoder1 = self.encoder_block(merge, self.encoder_heads)  #(B, 100, 248)
         
         print(encoder1.shape)
-        dense7 = Dense(3, activation=self.dense3_activation)(encoder1) #(B, 744, 100)
+        dense7 = Dense(self.gat_heads, activation=self.dense3_activation)(encoder1) #(B, 744, 100)
         print(dense7.shape)
         flatten8 = Flatten()(dense7)
         print(flatten8.shape)
