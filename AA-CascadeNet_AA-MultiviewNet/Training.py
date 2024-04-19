@@ -94,7 +94,7 @@ train_loss_results = []
 train_accuracy_results = []
 
 
-def train(setup,num_epochs,attention,depth,batch_size, gamma, preprocess, gat_heads, encoder_heads, lr, threshold, mode, k, load_ssl=False):
+def train(setup,num_epochs,attention,depth,batch_size, gamma, preprocess, gat_heads, encoder_heads, lr, threshold, mode, k, overlap, load_ssl=False):
     gpus = tensorflow.config.experimental.list_physical_devices('GPU')
     tensorflow.config.experimental.set_memory_growth(gpus[0], True)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -233,7 +233,7 @@ def train(setup,num_epochs,attention,depth,batch_size, gamma, preprocess, gat_he
                 number_workers_training = 1
                 number_files_per_worker = len(subject_files_train)//number_workers_training
 
-                X_train, Y_train = utils.multi_processing_multiviewGAT(subject_files_train,number_files_per_worker,number_workers_training,depth)
+                X_train, Y_train = utils.multi_processing_multiviewGAT(subject_files_train,number_files_per_worker,number_workers_training,depth, overlap)
                 np.save(save_path_X, X_train)
                 np.save(save_path_Y, Y_train)
             else:
@@ -258,7 +258,7 @@ def train(setup,num_epochs,attention,depth,batch_size, gamma, preprocess, gat_he
 
                 number_workers_validation = 8
                 number_files_per_worker = len(subject_files_val)//number_workers_validation
-                X_validate, Y_validate = utils.multi_processing_multiviewGAT(subject_files_val,number_files_per_worker,number_workers_validation,depth)       
+                X_validate, Y_validate = utils.multi_processing_multiviewGAT(subject_files_val,number_files_per_worker,number_workers_validation,depth, overlap)       
                 np.save(save_path_X, X_validate)
                 np.save(save_path_Y, Y_validate)
             else:
@@ -268,7 +268,6 @@ def train(setup,num_epochs,attention,depth,batch_size, gamma, preprocess, gat_he
             X_validate, Y_validate = utils.reshape_input_dictionary(X_validate, Y_validate, batch_size,depth)
 
             print(" ++Validation data loaded [{}]\t\t".format(subject))
-            print(batch_size)
             history = model.fit(X_train, Y_train, batch_size = batch_size, epochs = 1, 
                                     verbose = 1, validation_data=(X_validate, Y_validate), 
                                     callbacks=None)
@@ -333,7 +332,7 @@ def train(setup,num_epochs,attention,depth,batch_size, gamma, preprocess, gat_he
                 save_path_X = os.path.join(folder_test, "X-{}.npy".format(subject))
                 save_path_Y = os.path.join(folder_test, "Y-{}.npy".format(subject))
                 if(not os.path.isfile(save_path_X) or ( preprocess and epoch+1 == 2)):
-                    X_test, Y_test = utils.multi_processing_multiviewGAT(subject_files_test,number_files_per_worker,number_workers_testing,depth)
+                    X_test, Y_test = utils.multi_processing_multiviewGAT(subject_files_test,number_files_per_worker,number_workers_testing,depth, overlap)
                     np.save(save_path_X, X_test)
                     np.save(save_path_Y, Y_test)
                 else:
@@ -343,7 +342,7 @@ def train(setup,num_epochs,attention,depth,batch_size, gamma, preprocess, gat_he
                 for w in range(10):
                     X_test["input"+str(w+1)][:,124] = [0]*10
 
-                result = model.evaluate(X_test, Y_test, batch_size = batch_size,verbose=1)
+                result = model.evaluate(X_test, Y_test, batch_size = 8,verbose=1)
                 X_test = None
                 Y_test = None
                 gc.collect()
@@ -378,9 +377,9 @@ if __name__ == '__main__':
                         0 and 2 to choose the setup of the training", default=0)  
     parser.add_argument('-a','--attention',type=str,help="Please choose the type of attention. \
                         Is it no attention or self-attention only or self + global attention",\
-                        choices=['no','self','global','gat'],default = "no")
+                        choices=['no','self','global','gat'],default = "gat")
     parser.add_argument('-e','--epochs',type=int,help="Please choose the number of \
-                        epochs, by default 1 epoch", default=1)
+                        epochs, by default 1 epoch", default=15)
     parser.add_argument('-d','--depth',type=int,help="Please choose the depth of the\
                         input tensors, by default 10", default=10)
     parser.add_argument('-b','--batchsize',type=int,help="Please choose the size of the\
@@ -426,8 +425,10 @@ if __name__ == '__main__':
     # for k in k_range:
 
     # for bc in range(3):
-    
-     
+    overlaps = [0.75]
+    preprocess = False
+    for overlap in overlaps:
+        print(overlap)
         # for adjacency in rbf_range:        
-    train(args.setup,args.epochs,args.attention,args.depth, args.batchsize, args.gamma, args.preprocess, gat, encoder, 0.0001, args.threshold, args.adjacency, 3, args.loadssl)
+        train(args.setup,args.epochs,args.attention,args.depth, args.batchsize, args.gamma, preprocess, gat, encoder, 0.0001, args.threshold, args.adjacency, 3, overlap, args.loadssl)
         # epochs += 2

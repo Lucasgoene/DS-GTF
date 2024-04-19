@@ -23,7 +23,7 @@ def normalize(array):
 #Given the number "n", it finds the closest that is divisible by "m"
 #Used when splitting the matrices
 def closestNumber(n, m) : 
-    q = int(n / m) 
+    q = int(n / m)  
     n1 = m * q 
     if((n * m) > 0) : 
         n2 = (m * (q + 1))  
@@ -342,11 +342,11 @@ def multi_processing_cascade(directory, length, num_cpu,depth):
         gc.collect()
     return x, y
 
-def multi_processing_multiviewGAT(directory, length, num_cpu,depth):
+def multi_processing_multiviewGAT(directory, length, num_cpu,depth, overlap):
     assert len(directory) == length*num_cpu,"Directory does not have {} files.".format(length*num_cpu)
     input_channels = 248
     window_size = 10
-    results = load_overlapped_data_multieviewGAT(directory, depth)
+    results = load_overlapped_data_multieviewGAT(directory, depth, overlap)
 
     y = results[1]
     gc.collect()
@@ -472,14 +472,13 @@ def preprocess_data_type(matrix, window_size,depth):
     y = np.ones((number_y_labels,1),dtype=np.int8)
     return inputs, y
 
-def preprocess_data_type_lstm(matrix,window_size,depth):
+def preprocess_data_type_lstm(matrix,window_size,depth, overlap):
     input_channels = 248
 
     if(matrix.shape[1] == 1):
         length = 1
     else:
-        length = closestNumber(int(matrix.shape[1]) - window_size*depth,window_size*depth)
-        
+        length = closestNumber(int(matrix.shape[1]) - 2 * int(window_size*depth*(1 - overlap)),int(window_size*depth*(1- overlap)))
     matrices = np.zeros((input_channels,length),dtype=np.float64)
     for i in range(length):
         print(f"\t {i}/{length}", end='\r')
@@ -492,9 +491,12 @@ def preprocess_data_type_lstm(matrix,window_size,depth):
     if length == 1:
         for i in range(window_size):
             inputs.append(np.zeros((0,input_channels,depth)))
-    else:      
-        var = int(window_size*depth/2)    # difference between values in columns
-        var2 = int((length-window_size*depth/2)/var) # number of rows
+    else:
+        overlap = overlap # 25% overlap means that every window is 75% new
+
+        var = int(window_size*depth*(1.0 - overlap))    # difference between values in columns
+
+        var2 = int((length-window_size*depth*(overlap))/var) # number of rows
 
         for j in range(var2):
             if j == 0:
@@ -504,12 +506,10 @@ def preprocess_data_type_lstm(matrix,window_size,depth):
             else:
                 for i in range(window_size):
                     inputs[i][j] = matrices[:,var*j+i*depth:var*j+(i+1)*depth]
-
     del matrices
     gc.collect()
 
-    number_y_labels = int((length/(window_size*depth)*2)-1)
-    y = np.ones((number_y_labels,1),dtype=np.int8)
+    y = np.ones((var2,1),dtype=np.int8)
     return inputs, y
 
 def reshape_input_dictionary(input_dict, output_list, batch_size,depth):
@@ -652,7 +652,7 @@ def load_overlapped_data_cascade(file_dirs_depth):
 
     return data_dict,y
 
-def load_overlapped_data_multieviewGAT(file_dirs, depth):
+def load_overlapped_data_multieviewGAT(file_dirs, depth, overlap):
     input_channels = 248 #MEG channels
     number_classes = 4
     window_size = 10
@@ -708,7 +708,7 @@ def load_overlapped_data_multieviewGAT(file_dirs, depth):
     # outlier_channels = np.where(outliers == False)[0]
     # for channel in outlier_channels:
     #     rest_matrix[channel] = 0
-    x_rest_lstm,y_rest_lstm = preprocess_data_type_lstm(rest_matrix,window_size,depth)  
+    x_rest_lstm,y_rest_lstm = preprocess_data_type_lstm(rest_matrix,window_size,depth, overlap)  
     rest_matrix = None
     y_rest_lstm = y_rest_lstm*0
 
@@ -719,7 +719,7 @@ def load_overlapped_data_multieviewGAT(file_dirs, depth):
     # outlier_channels = np.where(outliers == False)[0]
     # for channel in outlier_channels:
     #     math_matrix[channel] = 0
-    x_math_lstm,y_math_lstm = preprocess_data_type_lstm(math_matrix,window_size,depth)       
+    x_math_lstm,y_math_lstm = preprocess_data_type_lstm(math_matrix,window_size,depth, overlap)       
     math_matrix = None
     
     print("Preprocessing memory task")
@@ -729,7 +729,7 @@ def load_overlapped_data_multieviewGAT(file_dirs, depth):
     # outlier_channels = np.where(outliers == False)[0]
     # for channel in outlier_channels:
     #     memory_matrix[channel] = 0
-    x_mem_lstm,y_mem_lstm = preprocess_data_type_lstm(memory_matrix,window_size,depth)
+    x_mem_lstm,y_mem_lstm = preprocess_data_type_lstm(memory_matrix,window_size,depth, overlap)
     memory_matrix = None
     y_mem_lstm = y_mem_lstm*2
     
@@ -740,10 +740,9 @@ def load_overlapped_data_multieviewGAT(file_dirs, depth):
     # outlier_channels = np.where(outliers == False)[0]
     # for channel in outlier_channels:
     #     motor_matrix[channel] = 0
-    x_motor_lstm,y_motor_lstm = preprocess_data_type_lstm(motor_matrix,window_size,depth)
+    x_motor_lstm,y_motor_lstm = preprocess_data_type_lstm(motor_matrix,window_size,depth, overlap)
     motor_matrix = None
     y_motor_lstm = y_motor_lstm * 3
-    
     dicts_input = []
     for i in range(window_size):
         print(f"{i}/{window_size}", end='\r')

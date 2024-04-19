@@ -43,13 +43,13 @@ class MultiviewGAT:
         self.conv2_activation = conv2_activation
         self.conv3_activation = conv3_activation
         
-        self.dense_nodes = 248*gat_heads
+        self.dense_nodes = 248
         self.dense_activation = dense_activation
         
         self.lstm1_cells = lstm1_cells
         self.lstm2_cells = lstm2_cells
         
-        self.dense3_nodes = 248*gat_heads
+        self.dense3_nodes = 248
         self.dense3_activation = dense3_activation
         
         self.depth_k = 6
@@ -317,7 +317,6 @@ class MultiviewGAT:
             inputs_lstm.append(input)
             
             gat = self.graphAttention(input, self.gat_heads, name="gat_{}".format(i+1)) #Bx248x3
-
             flat = Flatten()(gat)
             dense = Dense(self.dense_nodes, activation=self.dense_activation, name="gat_dense_{}".format(i+1), trainable=True)(flat)
             outputs_cnn.append(dense)
@@ -325,9 +324,14 @@ class MultiviewGAT:
             
         # Temporal stream
         merge = concatenate(encoder,axis=-1)
+        # print(merge.shape)
+        # positional_encoding = keras_nlp.layers.SinePositionEncoding()(merge)
+        # merge = merge + positional_encoding
+        print(merge.shape)
         encoder1 = self.encoder_block(merge, self.encoder_heads)
-        
-        dense7 = Dense(self.gat_heads, activation=self.dense3_activation, name="encoder_dense", trainable=True)(encoder1) 
+        print(encoder1.shape)
+        # print(encoder1.shape)
+        dense7 = Dense(3, activation=self.dense3_activation, name="encoder_dense", trainable=True)(encoder1) 
         flatten8 = Flatten()(dense7)
 
         # Add Spatial stream
@@ -335,7 +339,7 @@ class MultiviewGAT:
 
         # Combine streams
         final = concatenate([flatten8,added], axis=-1)
-
+        # print(final.shape)
         # Generate outputs
         output = Dense(4, activation="softmax")(final)
         model = Model(inputs=inputs_lstm, outputs=output)
