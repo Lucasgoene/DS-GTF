@@ -1,4 +1,4 @@
-📡 Deep brain state classification of MEG data
+📡 Classifying MEG Data
 ========
 
 This project aims to perform cross-subject multi-class classification based on MEG signals to infer the subject's state. The implemented model is a Dual Stream Graph Transformer Fusion Network, with diferent techniques for initializing the adjacency matrix. The original paper can be found at: https://arxiv.org/pdf/2007.00897.pdf
@@ -67,7 +67,7 @@ l.d.goene@student.uu.nl
 
 s.mehrkanoon@uu.nl
 
-The data must be downloaded and unzipped in the directory defined at the bottom of `data_utils.py`
+The data must be downloaded and unzipped in the directory defined at the bottom of *data_utils.py*, line 850.
 
 📜 Scripts
 -----
