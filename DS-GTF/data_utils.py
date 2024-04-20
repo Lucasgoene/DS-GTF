@@ -362,48 +362,6 @@ def get_dataset_name(file_name_with_dir):
     dataset_name = "_".join(temp)
     return dataset_name
 
-def preprocess_data_type_original(matrix, window_size,depth):
-    input_rows = 20
-    input_columns = 21
-    input_channels = 248
-
-    if(matrix.shape[1] == 1):
-        length = 1
-    else:
-        length = closestNumber(int(matrix.shape[1]) - window_size*depth,window_size*depth)
-
-    meshes = np.zeros((input_rows,input_columns,length),dtype=np.float64)
-    for i in range(length):
-        print(f"{i}/{length}", end='\r')
-        array_time_step = np.reshape(matrix[:,i],(1,input_channels))
-        meshes[:,:,i] = array_to_mesh(array_time_step)
-    
-    del matrix    
-
-    inputs = []
-    if length == 1:
-        for i in range(window_size):
-            inputs.append(np.zeros((0,input_rows,input_columns,depth)))
-    else:
-        column_offset = int(window_size*depth/2)    # difference between values in columns
-        num_rows_big_matrix = int((length-window_size*depth/2)/column_offset) # number of rows
-
-        for j in range(num_rows_big_matrix):
-            if j == 0:
-                for i in range(window_size):
-                    inputs.append(np.zeros((num_rows_big_matrix,input_rows,input_columns,depth)))
-                    inputs[i][j] = meshes[:,:,i*depth:(i+1)*depth]
-            else:
-                for i in range(window_size):
-                    inputs[i][j] = meshes[:,:,column_offset*j+i*depth:column_offset*j+(i+1)*depth]
-
-    del meshes
-    gc.collect()
-    
-    number_y_labels = int((length/(window_size*depth)*2)-1)
-    y = np.ones((number_y_labels,1),dtype=np.int8)
-    return inputs, y
-
 def preprocess_data_type(matrix,window_size,depth,):
     input_channels = 248
 
@@ -888,6 +846,7 @@ def load_overlapped_data_multiview(file_dirs_depth):
     y = to_categorical(y,number_classes)
     return data_dict,y
 
+# DEFINE DATA ROOT FOLDER
 root = "D:/Users/Lucas/Documents/MEG_Data_Cascade_Multiview/"
 
 training_file_dir = root + "Data/train"

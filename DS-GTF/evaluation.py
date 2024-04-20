@@ -1,7 +1,7 @@
 import argparse
 import os
 import numpy as np
-from Training import get_multiview_model_gat
+from training import get_multiview_model_gat
 import data_utils as utils
 import gc
 import pandas as pd
@@ -20,7 +20,6 @@ parser.add_argument('-m', '--model', type=str, default="top_k", help ="Please de
 args = parser.parse_args()
 
 
-model_string = "C:/Users/lucas/Documenten/Actief/Universiteit/Master/Thesis/backup/multiviewGAT/AA-CascadeNet_AA-MultiviewNet/best_models/{}/model".format(args.model)
 model_string = "best_models/{}/model".format(args.model)
 batch_size = 16
 
