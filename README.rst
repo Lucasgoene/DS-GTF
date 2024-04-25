@@ -43,9 +43,6 @@ To train the DS-GTF model:
     -t THRESHOLD, --threshold THRESHOLD                             Please choose a threshold value , by default 0.95
     -k K                                                            Please choose a K value , by default 3
 
-    
-To test the pretrained best configurations (no attention, self-attention, self + global attention):
-
 .. code:: bash
     
     python evaluation.py -m top_k
