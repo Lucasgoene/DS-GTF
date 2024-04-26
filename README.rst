@@ -69,10 +69,10 @@ The data must be downloaded and unzipped in the directory defined at the bottom 
 
 - The test script loads the pretrained model and evaluate it with the indicated subjects.
 
-🔗 Citation
------
+.. 🔗 Citation
+.. -----
 
-WIP
+.. WIP
 
 .. If you decide to cite our project in your paper or use our data, please use the following bibtex reference:
 
