@@ -3,14 +3,7 @@
 
 This project aims to perform cross-subject multi-class classification based on MEG signals to infer the subject's state. The implemented model is a Dual Stream Graph Transformer Fusion Network, with diferent techniques for initializing the adjacency matrix. 
 
-![model architecture](https://github.com/Lucasgoene/DS-GTF/blob/main/DS-GTF.png)
-
-.. 📊 Results
-.. -----
-
-.. The best results for cross-subject testing of models that are trained with 12 subjects and tested on 6 subjects are shown below. 
-
-.. .. figure:: results.svg
+.. figure:: DS-GTF.png
 
 
 💻 Installation
